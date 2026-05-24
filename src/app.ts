@@ -2,6 +2,7 @@ import express, { type Application, type Request, type Response } from "express"
 import { pool } from "./db"
 import config from "./config/envdot"
 import jwt from "jsonwebtoken";
+import { authMiddleware, type AuthRequest } from "./middleware/auth.middleware";
 
 const app: Application = express()
 
@@ -114,6 +115,46 @@ app.post("/api/login", async (req: Request, res: Response) => {
     }
 
 });
+
+// create issue route 
+app.post("/api/issues", authMiddleware, async (req: AuthRequest, res: Response) => {
+
+        const { title, description, type } = req.body;
+
+        // JWT থেকে reporter id আসবে
+        const reporter_id = req.user?.id;
+
+        try {
+
+            const result = await pool.query(
+                `INSERT INTO issues
+                (title, description, type, reporter_id)
+                
+                VALUES ($1, $2, $3, $4)
+
+                RETURNING *`,
+                [title, description, type, reporter_id]
+            );
+
+            res.status(201).json({
+                success: true,
+                message: "Issue created successfully",
+                data: result.rows[0]
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                success: false,
+                message: "Something went wrong",
+                error
+            });
+
+        }
+
+    }
+);
+
 
 
 export default app
