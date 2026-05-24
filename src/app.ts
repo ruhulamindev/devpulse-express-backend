@@ -269,5 +269,73 @@ app.get("/api/issues", async (req: Request, res: Response) => {
     }
 });
 
+// Get Single Issue API
+app.get("/api/issues/:id", async (req: Request, res: Response) => {
+
+    try {
+        // issue id
+        const { id } = req.params;
+
+        // find issue
+        const issueResult = await pool.query(
+            `SELECT * FROM issues WHERE id = $1`,
+            [id]
+        );
+
+        // issue not found
+        if (issueResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found"
+            });
+        }
+
+        const issue = issueResult.rows[0];
+
+        // find reporter
+        const reporterResult = await pool.query(
+            `SELECT id, name, role FROM users WHERE id = $1`,
+            [issue.reporter_id]
+        );
+
+        const reporter = reporterResult.rows[0];
+
+        // formatted response
+        const formattedIssue = {
+            id: issue.id,
+            title: issue.title,
+            description: issue.description,
+            type: issue.type,
+            status: issue.status,
+            reporter: reporter,
+            created_at: issue.created_at,
+            updated_at: issue.updated_at
+        };
+
+        // success response
+        res.status(200).json({
+            success: true,
+            message: "Issue retrived successfully",
+            data: formattedIssue
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error
+        });
+
+    }
+
+});
+
+
+
+
+
+
+
 
 export default app
