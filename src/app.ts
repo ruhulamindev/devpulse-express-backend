@@ -346,57 +346,56 @@ app.get("/api/issues/:id", async (req: Request, res: Response) => {
 });
 
 // Update Issue API
-app.patch(
-    "/api/issues/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
+app.patch("/api/issues/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
 
-        const issueId = req.params.id;
+    const issueId = req.params.id;
 
-        const { title, description, type } = req.body;
+    const { title, description, type } = req.body;
 
-        try {
+    try {
 
-            // 1. find issue
-            const issueResult = await pool.query(
-                `SELECT * FROM issues WHERE id = $1`,
-                [issueId]
-            );
+        // 1. find issue
+        const issueResult = await pool.query(
+            `SELECT * FROM issues WHERE id = $1`,
+            [issueId]
+        );
 
-            // issue not found
-            if (issueResult.rows.length === 0) {
-                return res.status(404).json({
+        // issue not found
+        if (issueResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Issue not found"
+            });
+        }
+
+        const issue = issueResult.rows[0];
+
+        // logged in user
+        const user = req.user;
+
+        // 2. maintainer check
+        if (user?.role !== "maintainer") {
+
+            // contributor own issue check
+            if (user?.id !== issue.reporter_id) {
+                return res.status(403).json({
                     success: false,
-                    message: "Issue not found"
+                    message: "Forbidden access"
                 });
             }
 
-            const issue = issueResult.rows[0];
-
-            // logged in user
-            const user = req.user;
-
-            // 2. maintainer check
-            if (user?.role !== "maintainer") {
-
-                // contributor own issue check
-                if (user?.id !== issue.reporter_id) {
-                    return res.status(403).json({
-                        success: false,
-                        message: "Forbidden access"
-                    });
-                }
-
-                // contributor can update only open issue
-                if (issue.status !== "open") {
-                    return res.status(409).json({
-                        success: false,
-                        message: "You can update only open issues"
-                    });
-                }
+            // contributor can update only open issue
+            if (issue.status !== "open") {
+                return res.status(409).json({
+                    success: false,
+                    message: "You can update only open issues"
+                });
             }
+        }
 
-            // 3. update issue
-            const updatedResult = await pool.query(
-                `
+        // 3. update issue
+        const updatedResult = await pool.query(
+            `
         UPDATE issues
         SET
           title = $1,
@@ -408,30 +407,79 @@ app.patch(
 
         RETURNING *
         `,
-                [title, description, type, issueId]
+            [title, description, type, issueId]
+        );
+
+        // 4. response
+        res.status(200).json({
+            success: true,
+            message: "Issue updated successfully",
+            data: updatedResult.rows[0]
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error
+        });
+
+    }
+
+}
+);
+
+// Delete Issue (Maintainer only)
+app.delete(
+    "/api/issues/:id",
+    authMiddleware,
+    async (req: AuthRequest, res: Response) => {
+        const issueId = req.params.id;
+
+        try {
+            // 1. only maintainer allowed
+            if (req.user?.role !== "maintainer") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Only maintainer can delete issues",
+                });
+            }
+
+            // 2. check issue exists
+            const issueResult = await pool.query(
+                `SELECT * FROM issues WHERE id = $1`,
+                [issueId]
             );
 
-            // 4. response
+            if (issueResult.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Issue not found",
+                });
+            }
+
+            // 3. delete issue
+            await pool.query(
+                `DELETE FROM issues WHERE id = $1`,
+                [issueId]
+            );
+
+            // 4. success response (as per requirement)
             res.status(200).json({
                 success: true,
-                message: "Issue updated successfully",
-                data: updatedResult.rows[0]
+                message: "Issue deleted successfully",
             });
 
         } catch (error) {
-
             res.status(500).json({
                 success: false,
                 message: "Something went wrong",
-                error
+                error,
             });
-
         }
-
     }
 );
-
-
 
 
 
