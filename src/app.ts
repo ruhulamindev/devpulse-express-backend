@@ -331,8 +331,91 @@ app.get("/api/issues/:id", async (req: Request, res: Response) => {
 
 });
 
+// Update Issue API
+app.patch(
+    "/api/issues/:id", authMiddleware, async (req: AuthRequest, res: Response) => {
 
+        const issueId = req.params.id;
 
+        const { title, description, type } = req.body;
+
+        try {
+
+            // 1. find issue
+            const issueResult = await pool.query(
+                `SELECT * FROM issues WHERE id = $1`,
+                [issueId]
+            );
+
+            // issue not found
+            if (issueResult.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Issue not found"
+                });
+            }
+
+            const issue = issueResult.rows[0];
+
+            // logged in user
+            const user = req.user;
+
+            // 2. maintainer check
+            if (user?.role !== "maintainer") {
+
+                // contributor own issue check
+                if (user?.id !== issue.reporter_id) {
+                    return res.status(403).json({
+                        success: false,
+                        message: "Forbidden access"
+                    });
+                }
+
+                // contributor can update only open issue
+                if (issue.status !== "open") {
+                    return res.status(409).json({
+                        success: false,
+                        message: "You can update only open issues"
+                    });
+                }
+            }
+
+            // 3. update issue
+            const updatedResult = await pool.query(
+                `
+        UPDATE issues
+        SET
+          title = $1,
+          description = $2,
+          type = $3,
+          updated_at = NOW()
+
+        WHERE id = $4
+
+        RETURNING *
+        `,
+                [title, description, type, issueId]
+            );
+
+            // 4. response
+            res.status(200).json({
+                success: true,
+                message: "Issue updated successfully",
+                data: updatedResult.rows[0]
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                success: false,
+                message: "Something went wrong",
+                error
+            });
+
+        }
+
+    }
+);
 
 
 
