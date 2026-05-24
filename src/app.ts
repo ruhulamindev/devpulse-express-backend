@@ -20,15 +20,30 @@ app.get('/', (req: Request, res: Response) => {
 
 // User Registration (signup)
 app.post("/api/signup", async (req: Request, res: Response) => {
-    const { name, email, password } = req.body;
-    const role = "contributor";
+    const { name, email, password, role } = req.body;
 
     try {
+        // allowed roles
+        const allowedRoles = ["contributor", "maintainer"];
+
+        // role validation (if provided)
+        let userRole = "contributor"; // default
+
+        if (role) {
+            if (!allowedRoles.includes(role)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid role. Must be contributor or maintainer",
+                });
+            }
+            userRole = role;
+        }
+
         const result = await pool.query(
             `INSERT INTO users (name, email, password, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, name, email, role, created_at, updated_at`,
-            [name, email, password, role]
+            [name, email, password, userRole]
         );
 
         res.status(201).json({
@@ -45,7 +60,6 @@ app.post("/api/signup", async (req: Request, res: Response) => {
         });
     }
 });
-
 
 // User Login
 app.post("/api/login", async (req: Request, res: Response) => {
