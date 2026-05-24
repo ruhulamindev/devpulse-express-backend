@@ -119,42 +119,155 @@ app.post("/api/login", async (req: Request, res: Response) => {
 // create issue route 
 app.post("/api/issues", authMiddleware, async (req: AuthRequest, res: Response) => {
 
-        const { title, description, type } = req.body;
+    const { title, description, type } = req.body;
 
-        // JWT থেকে reporter id আসবে
-        const reporter_id = req.user?.id;
+    // reporter id
+    if (!req.user?.id) {
+        return res.status(401).json({
+            success: false,
+            message: "Unauthorized"
+        });
+    }
+    // JWT থেকে reporter id আসবে
+    const reporter_id = req.user.id;
 
-        try {
+    // required check
+    if (!title || !description || !type) {
+        return res.status(400).json({
+            success: false,
+            message: "title, description, type required"
+        });
+    }
+    // description length (requirement says min 20 chars)
+    if (description.length < 20) {
+        return res.status(400).json({
+            success: false,
+            message: "description must be at least 20 characters"
+        });
+    }
+    // type validation
+    if (!["bug", "feature_request"].includes(type)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid type. Must be bug or feature_request",
+        });
+    }
 
-            const result = await pool.query(
-                `INSERT INTO issues
+    try {
+
+        const result = await pool.query(
+            `INSERT INTO issues
                 (title, description, type, reporter_id)
                 
                 VALUES ($1, $2, $3, $4)
 
                 RETURNING *`,
-                [title, description, type, reporter_id]
-            );
+            [title, description, type, reporter_id]
+        );
 
-            res.status(201).json({
-                success: true,
-                message: "Issue created successfully",
-                data: result.rows[0]
-            });
+        res.status(201).json({
+            success: true,
+            message: "Issue created successfully",
+            data: result.rows[0]
+        });
 
-        } catch (error) {
+    } catch (error) {
 
-            res.status(500).json({
-                success: false,
-                message: "Something went wrong",
-                error
-            });
-
-        }
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error
+        });
 
     }
+
+}
 );
 
+// Get All Issues API
+app.get("/api/issues", async (req: Request, res: Response) => {
+    try {
+
+        const { sort = "newest", type, status } = req.query;
+
+        // 1. base query
+        let query = `SELECT * FROM issues`;
+        let conditions: string[] = [];
+        let values: any[] = [];
+
+        // 2. filtering (type)
+        if (type) {
+            values.push(type);
+            conditions.push(`type = $${values.length}`);
+        }
+
+        // 3. filtering (status)
+        if (status) {
+            values.push(status);
+            conditions.push(`status = $${values.length}`);
+        }
+
+        // 4. add WHERE if needed
+        if (conditions.length > 0) {
+            query += ` WHERE ` + conditions.join(" AND ");
+        }
+
+        // 5. sorting
+        if (sort === "oldest") {
+            query += ` ORDER BY created_at ASC`;
+        } else {
+            query += ` ORDER BY created_at DESC`;
+        }
+
+        // 6. get issues
+        const issuesResult = await pool.query(query, values);
+        const issues = issuesResult.rows;
+
+        // 7. get unique reporter ids
+        const reporterIds = [...new Set(issues.map(i => i.reporter_id))];
+
+        let reportersMap: any = {};
+
+        if (reporterIds.length > 0) {
+            const reporterResult = await pool.query(
+                `SELECT id, name, role FROM users WHERE id = ANY($1)`,
+                [reporterIds]
+            );
+
+            reporterResult.rows.forEach(user => {
+                reportersMap[user.id] = user;
+            });
+        }
+
+        // 8. attach reporter object
+        const formattedIssues = issues.map(issue => {
+            return {
+                id: issue.id,
+                title: issue.title,
+                description: issue.description,
+                type: issue.type,
+                status: issue.status,
+                reporter: reportersMap[issue.reporter_id] || null,
+                created_at: issue.created_at,
+                updated_at: issue.updated_at
+            };
+        });
+
+        // 9. response
+        res.status(200).json({
+            success: true,
+            message: "Issues retrived successfully",
+            data: formattedIssues
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error
+        });
+    }
+});
 
 
 export default app

@@ -16,7 +16,7 @@ export const initDB = async () => {
     email VARCHAR(150) UNIQUE NOT NULL,
     password TEXT NOT NULL,
 
-    role VARCHAR(20) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'contributor',
 
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -42,7 +42,7 @@ export const initDB = async () => {
             updated_at TIMESTAMP DEFAULT NOW()
         )
         `)
-        
+
         console.log("Database connected successfully!!");
     } catch (error) {
         console.log(error);
