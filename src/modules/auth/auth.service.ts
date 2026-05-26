@@ -1,15 +1,12 @@
 import { pool } from "../../db";
 import jwt from "jsonwebtoken";
 import config from "../../config/envdot";
+import type { LoginServiceInput, LoginServiceResponse, SignupServiceInput } from "./auth.interface";
 
 
 // SIGNUP SERVICE
-export const signupService = async (
-    name: string,
-    email: string,
-    password: string,
-    role?: string
-) => {
+export const signupService = async (data: SignupServiceInput) => {
+    const { name, email, password, role } = data;
 
     const allowedRoles = ["contributor", "maintainer"];
     let userRole = "contributor";
@@ -34,10 +31,8 @@ export const signupService = async (
 
 
 // LOGIN SERVICE
-export const loginService = async (
-    email: string,
-    password: string
-) => {
+export const loginService = async (data: LoginServiceInput): Promise<LoginServiceResponse> => {
+    const { email, password } = data;
 
     const result = await pool.query(
         `SELECT * FROM users WHERE email=$1`,
