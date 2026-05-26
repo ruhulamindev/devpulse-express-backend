@@ -8,6 +8,7 @@ import {
     deleteIssueService,
 } from "./issues.service";
 import type { IssueQuery } from "./issue.interface";
+import { sendResponse } from "../../utils/sendResponse";
 
 // Create Issue
 export const createIssue = async (
@@ -19,7 +20,8 @@ export const createIssue = async (
 
         const result = await createIssueService(req.body, req.user!.id);
 
-        res.status(201).json({
+        sendResponse(res, {
+            statusCode: 201,
             success: true,
             message: "Issue created successfully",
             data: result,
@@ -41,7 +43,8 @@ export const getAllIssues = async (
 
         const result = await getAllIssuesService(req.query as IssueQuery);
 
-        res.status(200).json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
             message: "Issues retrived successfully",
             data: result,
@@ -63,7 +66,8 @@ export const getSingleIssue = async (
 
         const result = await getSingleIssueService(req);
 
-        res.status(200).json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
             message: "Issue retrived successfully",
             data: result,
@@ -85,7 +89,8 @@ export const updateIssue = async (
 
         const result = await updateIssueService(req);
 
-        res.status(200).json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
             message: "Issue updated successfully",
             data: result,
@@ -107,7 +112,8 @@ export const deleteIssue = async (
 
         await deleteIssueService(req);
 
-        res.status(200).json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
             message: "Issue deleted successfully",
         });

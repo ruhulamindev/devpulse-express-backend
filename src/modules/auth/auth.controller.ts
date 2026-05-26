@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { signupService, loginService } from "./auth.service";
+import { sendResponse } from "../../utils/sendResponse";
 
 
 // SIGNUP CONTROLLER
@@ -9,10 +10,11 @@ export const signupUser = async (req: Request, res: Response, next: NextFunction
 
         const user = await signupService({ name, email, password, role });
 
-        res.status(201).json({
+        sendResponse(res, {
+            statusCode: 201,
             success: true,
             message: "User registered successfully",
-            data: user
+            data: user,
         });
 
     } catch (error) {
@@ -28,10 +30,11 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
 
         const data = await loginService({ email, password });
 
-        res.status(200).json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
             message: "Login successful",
-            data
+            data,
         });
 
     } catch (error) {
