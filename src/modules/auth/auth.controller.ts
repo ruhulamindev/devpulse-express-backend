@@ -1,9 +1,9 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { signupService, loginService } from "./auth.service";
 
 
 // SIGNUP CONTROLLER
-export const signupUser = async (req: Request, res: Response) => {
+export const signupUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { name, email, password, role } = req.body;
 
@@ -15,17 +15,14 @@ export const signupUser = async (req: Request, res: Response) => {
             data: user
         });
 
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    } catch (error) {
+        next(error);
     }
 };
 
 
 // LOGIN CONTROLLER
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body;
 
@@ -37,10 +34,7 @@ export const loginUser = async (req: Request, res: Response) => {
             data
         });
 
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    } catch (error) {
+        next(error);
     }
 };

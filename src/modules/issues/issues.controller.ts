@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import type { AuthRequest } from "../../middleware/auth.middleware";
 import {
     createIssueService,
@@ -12,7 +12,8 @@ import type { IssueQuery } from "./issue.interface";
 // Create Issue
 export const createIssue = async (
     req: AuthRequest,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) => {
     try {
 
@@ -24,13 +25,8 @@ export const createIssue = async (
             data: result,
         });
 
-    } catch (error: any) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -38,7 +34,8 @@ export const createIssue = async (
 // Get All Issues
 export const getAllIssues = async (
     req: Request,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) => {
     try {
 
@@ -50,13 +47,8 @@ export const getAllIssues = async (
             data: result,
         });
 
-    } catch (error: any) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -64,7 +56,8 @@ export const getAllIssues = async (
 // Get Single Issue
 export const getSingleIssue = async (
     req: Request,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) => {
     try {
 
@@ -76,13 +69,8 @@ export const getSingleIssue = async (
             data: result,
         });
 
-    } catch (error: any) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -90,7 +78,8 @@ export const getSingleIssue = async (
 // Update Issue
 export const updateIssue = async (
     req: AuthRequest,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) => {
     try {
 
@@ -102,13 +91,8 @@ export const updateIssue = async (
             data: result,
         });
 
-    } catch (error: any) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -116,7 +100,8 @@ export const updateIssue = async (
 // Delete Issue
 export const deleteIssue = async (
     req: AuthRequest,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) => {
     try {
 
@@ -127,12 +112,7 @@ export const deleteIssue = async (
             message: "Issue deleted successfully",
         });
 
-    } catch (error: any) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-
+    } catch (error) {
+        next(error);
     }
 };
