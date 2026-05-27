@@ -23,6 +23,13 @@ app.use("/api/auth", authRoutes);
 // issues api
 app.use("/api/issues", issuesRoutes);
 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
 
 // Global Error Handling Middleware
 app.use(globalErrorHandler);

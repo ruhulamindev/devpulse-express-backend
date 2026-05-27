@@ -5,14 +5,21 @@ import type {
 } from "express";
 
 export const globalErrorHandler = (
-  error: any,
+  error: unknown,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
 
-  res.status(500).json({
+    if (error instanceof Error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+
+  return res.status(500).json({
     success: false,
-    message: error.message || "Internal Server Error",
+    message: "Internal Server Error",
   });
 };
