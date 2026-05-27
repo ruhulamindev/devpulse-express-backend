@@ -2,6 +2,7 @@ import { pool } from "../../db";
 import jwt from "jsonwebtoken";
 import config from "../../config/envdot";
 import type { LoginServiceInput, LoginServiceResponse, SignupServiceInput } from "./auth.interface";
+import bcrypt from "bcrypt";
 
 
 // SIGNUP SERVICE
@@ -18,11 +19,14 @@ export const signupService = async (data: SignupServiceInput) => {
         userRole = role;
     }
 
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const result = await pool.query(
         `INSERT INTO users (name, email, password, role)
          VALUES ($1, $2, $3, $4)
          RETURNING id, name, email, role, created_at, updated_at`,
-        [name, email, password, userRole]
+        [name, email, hashedPassword, userRole]
     );
 
     return result.rows[0];
@@ -44,8 +48,12 @@ export const loginService = async (data: LoginServiceInput): Promise<LoginServic
     }
 
     const user = result.rows[0];
+    const isPasswordMatched = await bcrypt.compare(
+        password,
+        user.password
+    );
 
-    if (password !== user.password) {
+    if (!isPasswordMatched) {
         throw new Error("Invalid password");
     }
 
