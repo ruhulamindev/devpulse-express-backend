@@ -113,7 +113,7 @@ export const deleteIssue = async (
         await deleteIssueService(req);
 
         sendResponse(res, {
-            statusCode: 204,
+            statusCode: 200,
             success: true,
             message: "Issue deleted successfully",
         });

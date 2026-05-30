@@ -19,6 +19,16 @@ export const signupService = async (data: SignupServiceInput) => {
         userRole = role;
     }
 
+    // 🔍 CHECK EMAIL FIRST (important)
+    const existingUser = await pool.query(
+        `SELECT id FROM users WHERE email = $1`,
+        [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+        throw new Error("Email already exists");
+    }
+
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -31,7 +41,6 @@ export const signupService = async (data: SignupServiceInput) => {
 
     return result.rows[0];
 };
-
 
 
 // LOGIN SERVICE

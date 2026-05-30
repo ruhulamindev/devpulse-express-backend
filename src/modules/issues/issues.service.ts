@@ -13,6 +13,10 @@ export const createIssueService = async (data: CreateIssueInput, userId: number)
         throw new Error("title, description, type required");
     }
 
+      if (title.length > 150) {
+    throw new Error("Title must be maximum 150 characters");
+  }
+
     if (description.length < 20) {
         throw new Error(
             "description must be at least 20 characters"
