@@ -22,6 +22,7 @@ export interface UpdateIssueInput {
   title?: string;
   description?: string;
   type?: "bug" | "feature_request";
+  status?: "open" | "in_progress" | "resolved";
 };
 
 // QUERY FILTERS

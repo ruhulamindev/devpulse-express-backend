@@ -169,7 +169,7 @@ export const updateIssueService = async (
 
     const issueId = req.params.id;
 
-    const { title, description, type } = req.body as UpdateIssueInput;
+    const { title, description, type, status } = req.body as UpdateIssueInput;
 
     // find issue
     const issueResult = await pool.query(
@@ -202,21 +202,40 @@ export const updateIssueService = async (
         }
     }
 
+    // contributor status change করতে পারবে না
+    if (
+        user?.role !== "maintainer" &&
+        status !== undefined
+    ) {
+        throw new Error(
+            "Only maintainer can change issue status"
+        );
+    }
+
+    // valid status check
+    if (
+        status &&
+        !["open", "in_progress", "resolved"].includes(status)
+    ) {
+        throw new Error("Invalid status");
+    }
+
     // update query
     const updatedResult = await pool.query(
         `
       UPDATE issues
       SET
-        title = $1,
-        description = $2,
-        type = $3,
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        type = COALESCE($3, type),
+        status = COALESCE($4, status),
         updated_at = NOW()
 
-      WHERE id = $4
+      WHERE id = $5
 
       RETURNING *
     `,
-        [title, description, type, issueId]
+        [title, description, type, status, issueId]
     );
 
     return updatedResult.rows[0];
